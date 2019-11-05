@@ -1,0 +1,4 @@
+.stack-work/
+FPCompetition.cabal
+*~
+stack.yaml.lock
