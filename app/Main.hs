@@ -6,12 +6,6 @@ import Control.Monad hiding (join)
 import LSystem
 import TurtleDraw
 
--- getCharRules :: String -> [(Char, String)]
--- getCharRules = read $ 
-
-randomString :: Int -> IO String
-randomString n = replicateM n (randomRIO ('A', 'Z'))
-
 -- This is the old amazing magick
 -- randomNVariation n set = replicateM n (((!!) <$> pure set) <*> randomRIO (0, length set - 1))
 randomNVariation :: Int -> [a] -> IO [a]
