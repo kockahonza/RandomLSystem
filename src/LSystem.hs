@@ -1,4 +1,8 @@
-module LSystem where
+module LSystem (
+    LSystem (LSystem),
+    State, Rules,
+    afterNSteps, translate
+) where
 
 import qualified Data.Map.Strict as Map
 import Data.Maybe
@@ -24,15 +28,3 @@ afterNSteps (LSystem vars cons axiom rules) n = iterate (doOneStep fullRules) ax
 
 translate :: Eq a => [(a, b)] -> State a -> [b]
 translate km state = map fromJust $ filter isJust $ map (`lookup` km) state
-
-
--- testing
-data Atom = P | N | F | G deriving (Show, Eq, Ord)
-
--- start = [N, F]
--- myrules = Map.fromList [(F, [F, P, F, N, F, N, F, P, F]), (P, [P]), (N, [N])]
-
-start = ['A', 'B']                      :: State Char
-myrules = [('A', "AB"), ('B', "A")]     :: Rules Char
-
-myLSystem = LSystem "AB" "" "AB" myrules
