@@ -21,6 +21,11 @@ description:         Please see the README on GitHub at <https://github.com/kock
 
 dependencies:
 - base >= 4.7 && < 5
+- containers
+- random
+- QuickCheck
+- GLUT
+- OpenGL
 
 library:
   source-dirs: src

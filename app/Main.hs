@@ -1,6 +1,12 @@
 module Main where
 
-import Lib
+import System.Random
+
+import LSystem
+import TurtleDraw
+
+-- getCharRules :: String -> [(Char, String)]
+-- getCharRules = read $ 
 
 main :: IO ()
-main = someFunc
+main = (putStrLn "HOH") >>= (\x -> main)
