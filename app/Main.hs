@@ -4,8 +4,7 @@ import System.Random
 import Control.Monad
 
 import LSystem
-import TurtleDrawXTurtle
-import qualified TurtleDrawGLUT
+import TurtleDrawGLUT
 
 -- This is the old amazing magick
 -- randomNVariation n set = replicateM n (((!!) <$> pure set) <*> randomRIO (0, length set - 1))
@@ -36,9 +35,8 @@ testedMain = do
     let finalState = afterNSteps lsys 5
         commandSeq = translate [('A', Go 20), ('B', Go 10), ('C', Turn 90), ('D', Turn (-90))] finalState
     print lsys
-    showCommandSeq commandSeq
     testedMain
 
 main :: IO ()
 main = do
-    TurtleDrawGLUT.testing
+    showCommands [Go 0.001, Branch [SetColor (0, 255, 0), Go 0.001], Turn 90, SetColor (255, 0, 0), Go 0.001]

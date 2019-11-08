@@ -1,6 +1,6 @@
 module TurtleDrawXTurtle (
     Command (..),
-    showCommandSeq
+    showCommands
 ) where
 
 import Graphics.X11.Turtle
@@ -11,8 +11,8 @@ getFuncFromCom :: Command -> (Turtle -> IO ())
 getFuncFromCom (Go n) = flip forward n
 getFuncFromCom (Turn n) = flip right n
 
-showCommandSeq :: [Command] -> IO ()
-showCommandSeq commands = do
+showCommands :: [Command] -> IO ()
+showCommands commands = do
     f <- openField
     t <- newTurtle f
     hideturtle t
