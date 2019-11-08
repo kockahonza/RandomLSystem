@@ -5,9 +5,9 @@ import Control.Monad
 import System.Console.ArgParser
 
 import LSystem
-import TurtleDrawGLUT
+import LSystemRenderer
 
-data Action = RunRandomLSystem | ShowLSystem Bool Float deriving (Eq, Show)
+data Action = RunRandomLSystem | ShowLSystem Bool Bool Float deriving (Eq, Show)
 
 actionParser :: IO (CmdLnInterface Action)
 actionParser = mkSubParser [
@@ -15,7 +15,8 @@ actionParser = mkSubParser [
         "Keep generating and showing random LSystems"),
     ("show", setAppDescr (mkDefaultApp (
                                         ShowLSystem `parsedBy` 
-                                        boolFlag "standard" `Descr` "Assume F means go forward, P turn right and M turn left" `andBy`
+                                        boolFlag "record" `Descr` "Get input in record syntax (the same way it is printed out)." `andBy`
+                                        boolFlag "standard" `Descr` "Assume F means go forward, + turn right, - turn left and [] indicates branching" `andBy`
                                         optFlag 90 "angle" `Descr` "The angle to use when the `standard` option is used"
                                        ) "show")
         "Show a specific LSystem. It will be read of standard input")
@@ -23,7 +24,7 @@ actionParser = mkSubParser [
 
 doAction :: Action -> IO ()
 doAction RunRandomLSystem = generateAndShowLSystemsForever
-doAction (ShowLSystem standard angle) = showLSystemFromStdInput standard angle
+doAction (ShowLSystem record standard angle) = showLSystemFromStdInput record standard angle
 
 main = do
     interface <- actionParser
@@ -66,12 +67,20 @@ generateAndShowLSystemsForever = do
 --------------------------------------------------------------------------------
 -- ShowLSystem
 --------------------------------------------------------------------------------
-showLSystemFromStdInput :: Bool -> Float -> IO ()
-showLSystemFromStdInput standard angle = do
-    vars <- getLine
-    cons <- getLine
-    axiom <- getLine
-    rules <- readLn :: IO [(Char, [Char])]
-    transRules <- if standard then return [('F', [Go 10]), ('P', [Turn angle]), ('M', [Turn (-angle)])] else readLn :: IO [(Char, [Command])]
-    let lsys = LSystem vars cons axiom rules transRules
-    showLSystem lsys
+showLSystemFromStdInput :: Bool -> Bool -> Float -> IO ()
+showLSystemFromStdInput record standard angle =
+    if record
+        then do
+            lsys <- readLn :: IO (LSystem Char Command)
+            showLSystem lsys
+        else do
+            vars <- getLine
+            cons <- getLine
+            axiom <- getLine
+            rules <- readLn :: IO [(Char, [Char])]
+            transRules <- if standard
+                             then return [('F', [Go 10]), ('+', [Turn angle]), ('-', [Turn (-angle)]), ('[', [StartBranch]), (']', [EndBranch])]
+                             else readLn :: IO [(Char, [Command])]
+            let lsys = LSystem vars cons axiom rules transRules
+            print lsys
+            showLSystem lsys

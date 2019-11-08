@@ -1,17 +1,18 @@
-module TurtleDrawGLUT (
+module LSystemRenderer (
     Command (..),
     white, black, red, green, blue,
-    showLSystem
+    showCommands, showLSystem
                       ) where
 
 import Graphics.UI.GLUT hiding (Line)
 import Data.IORef
 import Data.StateVar
+import Data.Maybe
 
 import LSystem
 
 
-data Command = Go Float | Turn Float | SetColor (Float, Float, Float) | Branch [Command]
+data Command = Go Float | Turn Float | SetColor (Float, Float, Float) | StartBranch | EndBranch
     deriving (Show, Read)
 
 --                       position    angle     color
@@ -30,17 +31,22 @@ green = (0  , 255, 0  )
 blue  = (0  , 0  , 255)
 
 commandsToLines :: [Command] -> [Line]
-commandsToLines = turtlePathLines (Turtle (Vertex2 0 0) 0 (Color3 255 255 255))
+commandsToLines = fst . turtlePathLines (Turtle (Vertex2 0 0) 0 (Color3 255 255 255))
     where
-        turtlePathLines :: Turtle -> [Command] -> [Line]
-        turtlePathLines t [] = []
-        turtlePathLines (Turtle tp@(Vertex2 tx ty) ta tc) (Go d:cs) = Line tc tp newTp : turtlePathLines (Turtle newTp ta tc) cs
+        turtlePathLines :: Turtle -> [Command] -> ([Line], Maybe [Command])
+        turtlePathLines t [] = ([], Nothing)
+        turtlePathLines (Turtle tp@(Vertex2 tx ty) ta tc) (Go d:cs) = (Line tc tp newTp : linesAfter, maybeBranchCs)
             where
                 aRad = (pi / 180) * ta
                 newTp = Vertex2 (tx + d*sin aRad) (ty + d*cos aRad)
+                (linesAfter, maybeBranchCs) = turtlePathLines (Turtle newTp ta tc) cs
         turtlePathLines (Turtle tp ta tc) (Turn a:cs) = turtlePathLines (Turtle tp (ta + a) tc) cs
         turtlePathLines (Turtle tp ta tc) (SetColor (r, g, b):cs) = turtlePathLines (Turtle tp ta (Color3 r g b)) cs
-        turtlePathLines t (Branch bcs:cs) = turtlePathLines t bcs ++ turtlePathLines t cs
+        turtlePathLines t (StartBranch:cs) = (inBranchLines ++ afterThisBranchLines, maybeAfterThisBranchCs)
+            where
+                (inBranchLines, maybeAfterBranchCs) = turtlePathLines t cs
+                (afterThisBranchLines, maybeAfterThisBranchCs) = turtlePathLines t (fromJust maybeAfterBranchCs)
+        turtlePathLines t (EndBranch:cs) = ([], Just cs)
 
 scaleLine :: Float -> Line -> Line
 scaleLine k (Line c v1 v2) = Line c (scaleV k v1) (scaleV k v2)
@@ -58,6 +64,21 @@ renderLine (Line col ver1 ver2)= renderPrimitive Lines $ do
     color col
     vertex ver1
     vertex ver2
+
+showCommands :: [Command] -> IO ()
+showCommands commands = do
+    initialWindowSize $= Size 800 800
+    (_progName, _args) <- getArgsAndInitialize
+    _window <- createWindow "Showing a lsit of commands"
+    displayCallback $= showCommandsDisplay commands
+    actionOnWindowClose $= ContinueExecution
+    mainLoop
+
+showCommandsDisplay :: [Command] -> DisplayCallback
+showCommandsDisplay commands = do
+    clear [ColorBuffer]
+    mapM_ renderLine $ rescaleLines $ commandsToLines commands
+    flush
 
 showLSystem :: Ord a => LSystem a Command-> IO ()
 showLSystem lsys = do
@@ -79,10 +100,10 @@ showLSystemKeyboard :: IORef Int -> KeyboardCallback
 showLSystemKeyboard nIORef c _ = case c of
     '-' -> nIORef $~ max 0 . (+(-1)) >> postRedisplay Nothing
     '+' -> nIORef $~ min 15 . (+1) >> postRedisplay Nothing
+    _ -> return ()
 
 showLSystemMouseWheel :: IORef Int -> MouseWheelCallback
-showLSystemMouseWheel nIORef _ d _ = do
-    nIORef $~ max 1 . (+d)
+showLSystemMouseWheel nIORef _ d _ = nIORef $~ max 1 . (+d) >> postRedisplay Nothing
 
 showLSystemDisplay :: Ord a => LSystem a Command -> IORef Int -> DisplayCallback
 showLSystemDisplay lsys nIORef = do
