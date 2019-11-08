@@ -25,7 +25,6 @@ red   = (255, 0  , 0  )
 green = (0  , 255, 0  )
 blue  = (0  , 0  , 255)
 
--- definitely staying
 commandsToLines :: [Command] -> [Line]
 commandsToLines = turtlePathLines (Turtle (Vertex2 0 0) 0 (Color3 255 255 255))
     where
