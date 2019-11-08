@@ -2,13 +2,13 @@ module TurtleDrawGLUT (
     Command (..),
     white, black, red, green, blue,
     showCommands
-) where
+                      ) where
 
 import Graphics.UI.GLUT hiding (Line)
 
 
 data Command = Go Float | Turn Float | SetColor (Float, Float, Float) | Branch [Command]
-    deriving (Show)
+    deriving (Show, Read)
 
 --                       position    angle     color
 data Turtle = Turtle (Vertex2 Float) Float (Color3 Float)
@@ -51,16 +51,16 @@ rescaleLines lines = map (scaleLine k) lines
 
 renderLine :: Line -> IO ()
 renderLine (Line col ver1 ver2)= renderPrimitive Lines $ do
-        color col
-        vertex ver1
-        vertex ver2
+    color col
+    vertex ver1
+    vertex ver2
 
 showCommands :: [Command] -> IO ()
 showCommands commands = do
     initialWindowSize $= Size 800 800
     (_progName, _args) <- getArgsAndInitialize
     _window <- createWindow "Showing a lsit of commands"
-    displayCallback $= (showCommandsDisplay commands)
+    displayCallback $= showCommandsDisplay commands
     actionOnWindowClose $= ContinueExecution
     mainLoop
 

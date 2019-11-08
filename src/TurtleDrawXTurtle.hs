@@ -1,7 +1,7 @@
 module TurtleDrawXTurtle (
     Command (..),
     showCommands
-) where
+                         ) where
 
 import Graphics.X11.Turtle
 

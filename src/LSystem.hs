@@ -1,30 +1,34 @@
 module LSystem (
     LSystem (LSystem),
     State, Rules,
-    afterNSteps, translate
-) where
+    stateAfterNSteps, translateState, translateAfterNSteps
+               ) where
 
 import qualified Data.Map.Strict as Map
 import Data.Maybe
 
 type State a = [a]
-type Rules a = [(a, [a])]
-type RulesMap a = Map.Map a [a]
+type Rules a b = [(a, [b])]
+type RulesMap a b = Map.Map a [b]
 
-data LSystem a = LSystem {
-    variables :: [a],
-    constants :: [a],
-    axiom     :: State a,
-    rules     :: Rules a
-} deriving (Show, Read)
+data LSystem a b = LSystem {
+    variables            :: [a],
+    constants            :: [a],
+    axiom                :: State a,
+    rules                :: Rules a a,
+    translationRules     :: Rules a b
+                           } deriving (Show, Read)
 
-doOneStep :: Ord a => RulesMap a -> State a -> State a
+doOneStep :: Ord a => RulesMap a a -> State a -> State a
 doOneStep rulesMap = concatMap (fromMaybe [] . (rulesMap Map.!?))
 
-afterNSteps :: Ord a => LSystem a -> Int -> State a
-afterNSteps (LSystem vars cons axiom rules) n = iterate (doOneStep fullRules) axiom !! n
+stateAfterNSteps :: Ord a => LSystem a b -> Int -> State a
+stateAfterNSteps (LSystem vars cons axiom rules tr) n = iterate (doOneStep fullRules) axiom !! n
     where
         fullRules = foldr (\f m -> f m) (Map.fromList rules) [Map.insert x [x] | x <- cons]
 
-translate :: Eq a => [(a, [b])] -> State a -> [b]
-translate km state = concatMap fromJust $ filter isJust $ map (`lookup` km) state
+translateState :: Eq a => LSystem a b -> State a -> [b]
+translateState (LSystem v c a r tr) state = concatMap fromJust $ filter isJust $ map (`lookup` tr) state
+
+translateAfterNSteps :: Ord a => LSystem a b -> Int -> [b]
+translateAfterNSteps lsys@(LSystem v c a r tr) n = concatMap fromJust $ filter isJust $ map (`lookup` tr) (stateAfterNSteps lsys n)

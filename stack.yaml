@@ -43,6 +43,8 @@ extra-deps:
   commit: fbea0434736a74b838bbec0a11e9f960176ad030
   subdirs:
     - HaXml-1.25.4
+- git: https://github.com/sbergot/ArgParser
+  commit: 801ffac4551382a0b08a50ae3b98402ebbf35b30
 # - acme-missiles-0.3
 # - git: https://github.com/commercialhaskell/stack.git
 #   commit: e7b331f14bcffb8367cd58fbfc8b40ec7642100a
