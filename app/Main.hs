@@ -13,10 +13,10 @@ randomNVariation n set = replicateM n ((set !!) <$> randomRIO (0, length set - 1
 
 randomVariation :: [a] -> IO [a]
 randomVariation set = do
-    n <- randomRIO (2, 10)
+    n <- randomRIO (2, 12)
     randomNVariation n set
 
-randomVarRules :: [a] -> [a] -> IO [(a, [a])]
+randomVarRules :: [a] -> [b] -> IO [(a, [b])]
 randomVarRules vars vcs = mapM (\x -> liftMonadFromTuple (return x, randomVariation vcs)) vars
     where
         liftMonadFromTuple = uncurry $ liftM2 (,)
@@ -29,14 +29,12 @@ getRandomLSystem = do
     rules <- randomVarRules vars (vars ++ cons)
     return (LSystem vars cons axiom rules)
 
-testedMain :: IO ()
-testedMain = do
-    lsys <- getRandomLSystem
-    let finalState = afterNSteps lsys 5
-        commandSeq = translate [('A', Go 20), ('B', Go 10), ('C', Turn 90), ('D', Turn (-90))] finalState
-    print lsys
-    testedMain
-
 main :: IO ()
 main = do
-    showCommands [Go 0.001, Branch [SetColor (0, 255, 0), Go 0.001], Turn 90, SetColor (255, 0, 0), Go 0.001]
+    lsys <- getRandomLSystem
+    translationRules <- randomVarRules "ABCD" [Go 10, Go 20, Turn 90, Turn (-90)]
+    let finalState = afterNSteps lsys 5
+        commands = translate translationRules finalState
+    showCommands commands
+    print lsys
+    main

@@ -16,7 +16,7 @@ data LSystem a = LSystem {
     constants :: [a],
     axiom     :: State a,
     rules     :: Rules a
-} deriving (Show)
+} deriving (Show, Read)
 
 doOneStep :: Ord a => RulesMap a -> State a -> State a
 doOneStep rulesMap = concatMap (fromMaybe [] . (rulesMap Map.!?))
@@ -26,5 +26,5 @@ afterNSteps (LSystem vars cons axiom rules) n = iterate (doOneStep fullRules) ax
     where
         fullRules = foldr (\f m -> f m) (Map.fromList rules) [Map.insert x [x] | x <- cons]
 
-translate :: Eq a => [(a, b)] -> State a -> [b]
-translate km state = map fromJust $ filter isJust $ map (`lookup` km) state
+translate :: Eq a => [(a, [b])] -> State a -> [b]
+translate km state = concatMap fromJust $ filter isJust $ map (`lookup` km) state
