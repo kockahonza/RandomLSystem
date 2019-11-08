@@ -24,8 +24,7 @@ dependencies:
 - containers
 - random
 - GLUT
-- OpenGL
-- xturtle
+- StateVar
 - argparser
 
 library:

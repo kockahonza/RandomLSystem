@@ -1,10 +1,14 @@
 module TurtleDrawGLUT (
     Command (..),
     white, black, red, green, blue,
-    showCommands
+    showLSystem
                       ) where
 
 import Graphics.UI.GLUT hiding (Line)
+import Data.IORef
+import Data.StateVar
+
+import LSystem
 
 
 data Command = Go Float | Turn Float | SetColor (Float, Float, Float) | Branch [Command]
@@ -55,17 +59,35 @@ renderLine (Line col ver1 ver2)= renderPrimitive Lines $ do
     vertex ver1
     vertex ver2
 
-showCommands :: [Command] -> IO ()
-showCommands commands = do
+showLSystem :: Ord a => LSystem a Command-> IO ()
+showLSystem lsys = do
     initialWindowSize $= Size 800 800
     (_progName, _args) <- getArgsAndInitialize
-    _window <- createWindow "Showing a lsit of commands"
-    displayCallback $= showCommandsDisplay commands
+    _window <- createWindow "Showing a LSystem"
+
+    nIORef <- newIORef (0 :: Int)
+    nIORef $= 5
+
+    displayCallback $= showLSystemDisplay lsys nIORef
+    keyboardCallback $= Just (showLSystemKeyboard nIORef)
+    mouseWheelCallback $= Just (showLSystemMouseWheel nIORef)
     actionOnWindowClose $= ContinueExecution
+
     mainLoop
 
-showCommandsDisplay :: [Command] -> DisplayCallback
-showCommandsDisplay commands = do
+showLSystemKeyboard :: IORef Int -> KeyboardCallback
+showLSystemKeyboard nIORef c _ = case c of
+    '-' -> nIORef $~ max 0 . (+(-1)) >> postRedisplay Nothing
+    '+' -> nIORef $~ min 15 . (+1) >> postRedisplay Nothing
+
+showLSystemMouseWheel :: IORef Int -> MouseWheelCallback
+showLSystemMouseWheel nIORef _ d _ = do
+    nIORef $~ max 1 . (+d)
+
+showLSystemDisplay :: Ord a => LSystem a Command -> IORef Int -> DisplayCallback
+showLSystemDisplay lsys nIORef = do
     clear [ColorBuffer]
-    mapM_ renderLine $ rescaleLines $ commandsToLines commands
+    n <- get nIORef
+    mapM_ renderLine $ rescaleLines $ commandsToLines $ translateAfterNSteps lsys n
+    renderString TimesRoman24 (show n)
     flush

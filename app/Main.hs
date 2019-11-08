@@ -7,19 +7,23 @@ import System.Console.ArgParser
 import LSystem
 import TurtleDrawGLUT
 
-data Action = RunRandomLSystem | ShowLSystem deriving (Eq, Show)
+data Action = RunRandomLSystem | ShowLSystem Bool Float deriving (Eq, Show)
 
 actionParser :: IO (CmdLnInterface Action)
 actionParser = mkSubParser [
     ("random", setAppDescr (mkDefaultApp (pure RunRandomLSystem) "random")
         "Keep generating and showing random LSystems"),
-    ("show", setAppDescr (mkDefaultApp (pure ShowLSystem) "show")
+    ("show", setAppDescr (mkDefaultApp (
+                                        ShowLSystem `parsedBy` 
+                                        boolFlag "standard" `Descr` "Assume F means go forward, P turn right and M turn left" `andBy`
+                                        optFlag 90 "angle" `Descr` "The angle to use when the `standard` option is used"
+                                       ) "show")
         "Show a specific LSystem. It will be read of standard input")
                              ]
 
 doAction :: Action -> IO ()
 doAction RunRandomLSystem = generateAndShowLSystemsForever
-doAction ShowLSystem = showLSystemFromStdInput
+doAction (ShowLSystem standard angle) = showLSystemFromStdInput standard angle
 
 main = do
     interface <- actionParser
@@ -38,7 +42,7 @@ randomVariationBounded lo hi set = do
     n <- randomRIO (lo, hi)
     randomNVariation n set
 
-randomVarRulesBounded :: Int -> Int -> [a] -> [b] -> IO [(a, [b])]
+randomVarRulesBounded :: Int -> Int -> [a] -> [b] -> IO (Rules a b)
 randomVarRulesBounded lo hi vars vcs = mapM (\x -> liftMonadFromTuple (return x, randomVariationBounded lo hi vcs)) vars
     where
         liftMonadFromTuple = uncurry $ liftM2 (,)
@@ -54,16 +58,20 @@ getRandomLSystem translationOptions = do
 
 generateAndShowLSystemsForever :: IO ()
 generateAndShowLSystemsForever = do
-    lsys <- getRandomLSystem [Go 10, Go 20, Turn 90, Turn (-90)]
+    lsys <- getRandomLSystem [Go 10, Go 10, Go 10, Turn 15, Turn (-15), SetColor red, SetColor green, SetColor blue]
     print lsys
-    showCommands $ translateAfterNSteps lsys 5
+    showLSystem lsys
     generateAndShowLSystemsForever
 
 --------------------------------------------------------------------------------
 -- ShowLSystem
 --------------------------------------------------------------------------------
-showLSystemFromStdInput :: IO ()
-showLSystemFromStdInput = do
-    inp <- getLine
-    let lsys = read inp :: LSystem Char Command
-    showCommands $ translateAfterNSteps lsys 5
+showLSystemFromStdInput :: Bool -> Float -> IO ()
+showLSystemFromStdInput standard angle = do
+    vars <- getLine
+    cons <- getLine
+    axiom <- getLine
+    rules <- readLn :: IO [(Char, [Char])]
+    transRules <- if standard then return [('F', [Go 10]), ('P', [Turn angle]), ('M', [Turn (-angle)])] else readLn :: IO [(Char, [Command])]
+    let lsys = LSystem vars cons axiom rules transRules
+    showLSystem lsys
