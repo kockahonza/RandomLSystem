@@ -99,7 +99,7 @@ showLSystem startN lsys = do
 showLSystemKeyboard :: IORef Int -> KeyboardCallback
 showLSystemKeyboard nIORef c _ = case c of
     '-' -> nIORef $~ max 0 . (+(-1)) >> postRedisplay Nothing
-    '+' -> nIORef $~ min 15 . (+1) >> postRedisplay Nothing
+    '+' -> nIORef $~ (+1) >> postRedisplay Nothing
     _ -> return ()
 
 showLSystemMouseWheel :: IORef Int -> MouseWheelCallback
