@@ -41,7 +41,7 @@ commandsToLines = fst . turtlePathLines (Turtle (Vertex2 0 0) 0 (Color3 255 255 
                 newTp = Vertex2 (tx + d*sin aRad) (ty + d*cos aRad)
                 (linesAfter, maybeBranchCs) = turtlePathLines (Turtle newTp ta tc) cs
         turtlePathLines (Turtle tp ta tc) (Turn a:cs) = turtlePathLines (Turtle tp (ta + a) tc) cs
-        turtlePathLines (Turtle tp ta tc) (SetColor (r, g, b):cs) = turtlePathLines (Turtle tp ta (Color3 r g b)) cs
+        turtlePathLines (Turtle tp ta tc) (SetColor (r, g, b):cs) = turtlePathLines (Turtle tp ta (Color3 (r / 255) (g / 255) (b / 255))) cs
         turtlePathLines t (StartBranch:cs) = (inBranchLines ++ afterThisBranchLines, maybeAfterThisBranchCs)
             where
                 (inBranchLines, maybeAfterBranchCs) = turtlePathLines t cs
@@ -80,14 +80,14 @@ showCommandsDisplay commands = do
     mapM_ renderLine $ rescaleLines $ commandsToLines commands
     flush
 
-showLSystem :: Ord a => LSystem a Command-> IO ()
-showLSystem lsys = do
+showLSystem :: Ord a => Int -> LSystem a Command -> IO ()
+showLSystem startN lsys = do
     initialWindowSize $= Size 800 800
     (_progName, _args) <- getArgsAndInitialize
     _window <- createWindow "Showing a LSystem"
 
     nIORef <- newIORef (0 :: Int)
-    nIORef $= 5
+    nIORef $= startN
 
     displayCallback $= showLSystemDisplay lsys nIORef
     keyboardCallback $= Just (showLSystemKeyboard nIORef)
@@ -109,6 +109,12 @@ showLSystemDisplay :: Ord a => LSystem a Command -> IORef Int -> DisplayCallback
 showLSystemDisplay lsys nIORef = do
     clear [ColorBuffer]
     n <- get nIORef
-    mapM_ renderLine $ rescaleLines $ commandsToLines $ translateAfterNSteps lsys n
+    let lines = commandsToLines $ translateAfterNSteps lsys n
+    mapM_ renderLine $ rescaleLines lines
+    -- print n white, bottom left corner
+    color $ (Color3 1 1 1 :: Color3 Float)
+    currentRasterPosition $= Vertex4 (-1) (-1) 0 1
     renderString TimesRoman24 (show n)
+    currentRasterPosition $= Vertex4 (0.5) (-1) 0 1
+    renderString TimesRoman24 (show (length lines))
     flush
